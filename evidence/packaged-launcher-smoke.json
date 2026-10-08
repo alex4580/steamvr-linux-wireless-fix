@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "tested_on": "2026-10-09",
+  "test": "Packaged CLI doctor, prepare, launch, normal GUI exit, automatic restore",
+  "repairs_verified_mapped": true,
+  "normal_openvr_runtime_and_both_desktop_handlers_restored": true,
+  "integration_restore_conflicts": [],
+  "installed_binary_hashes_unchanged": true,
+  "firmware_update_performed": false,
+  "scope": "Launcher and cleanup smoke test only; the successful firmware transfer used the underlying repair components earlier.",
+  "automatic_ready_check_verified_both_library_mappings": true,
+  "second_start_and_restore_after_readiness_guard": "PASS; idle monitor closed without any firmware operation"
+}

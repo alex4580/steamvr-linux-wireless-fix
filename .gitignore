@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.build/
+.test-output/
+.state/
+*.so
+*.o
+*.elf
+*.bin
+*.core
+*.zip
+*.tar.gz

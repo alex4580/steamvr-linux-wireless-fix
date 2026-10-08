@@ -1,0 +1,130 @@
+{
+  "status": "PASS",
+  "tests": [
+    {
+      "archive": "firmware",
+      "entries": [
+        {
+          "index": 0,
+          "name": "lighthouse_tx_vader_radio_full.bin",
+          "bytes": 297956,
+          "compressed_bytes": 297956,
+          "sha256": "b54a8a7e98cf31337ab0bccc5df2566338048caa82acf8675625efc0b2c94f5d",
+          "all_adapter_metadata_matches_original_large_layout": true
+        },
+        {
+          "index": 1,
+          "name": "lighthouse_tx_vader_radio_full.dat",
+          "bytes": 144,
+          "compressed_bytes": 144,
+          "sha256": "e902f709a73631bcaf030e28cddabe1229c33ddd4d6625dbb444f2d736f98640",
+          "all_adapter_metadata_matches_original_large_layout": true
+        },
+        {
+          "index": 2,
+          "name": "manifest.json",
+          "bytes": 192,
+          "compressed_bytes": 192,
+          "sha256": "9a9b253cf6ee04958d4fd4773e7c8be8c06c4690e64250005a340c14c6b63d54",
+          "all_adapter_metadata_matches_original_large_layout": true
+        }
+      ],
+      "rejected_long_names": [],
+      "error_cases": [
+        {
+          "index": -2,
+          "code": 65536
+        },
+        {
+          "index": 3,
+          "code": 65536
+        },
+        {
+          "index": 4,
+          "code": 65536
+        },
+        {
+          "index": 2147483647,
+          "code": 65536
+        }
+      ]
+    },
+    {
+      "archive": "fixture",
+      "entries": [
+        {
+          "index": 0,
+          "name": "empty.bin",
+          "bytes": 0,
+          "compressed_bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "all_adapter_metadata_matches_original_large_layout": true
+        },
+        {
+          "index": 1,
+          "name": "single.bin",
+          "bytes": 1,
+          "compressed_bytes": 1,
+          "sha256": "ab897fbdedfa502b2d839b6a56100887dccdc507555c282e59589e06300a62e2",
+          "all_adapter_metadata_matches_original_large_layout": true
+        },
+        {
+          "index": 2,
+          "name": "compressed.bin",
+          "bytes": 65536,
+          "compressed_bytes": 851,
+          "sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2",
+          "all_adapter_metadata_matches_original_large_layout": true
+        },
+        {
+          "index": 3,
+          "name": "nested/data.bin",
+          "bytes": 255,
+          "compressed_bytes": 260,
+          "sha256": "3f8591112c6bbe5c963965954e293108b7208ed2af893e500d859368c654eabe",
+          "all_adapter_metadata_matches_original_large_layout": true
+        },
+        {
+          "index": 4,
+          "name": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "bytes": 31,
+          "compressed_bytes": 31,
+          "sha256": "f68587e456a6e306732a229610c3614d663ae2fbea1923520927d3a74f5402fd",
+          "all_adapter_metadata_matches_original_large_layout": true
+        }
+      ],
+      "rejected_long_names": [
+        {
+          "index": 5,
+          "name_bytes": 260
+        },
+        {
+          "index": 6,
+          "name_bytes": 4095
+        }
+      ],
+      "error_cases": [
+        {
+          "index": -2,
+          "code": 65536
+        },
+        {
+          "index": 7,
+          "code": 65536
+        },
+        {
+          "index": 8,
+          "code": 65536
+        },
+        {
+          "index": 2147483647,
+          "code": 65536
+        }
+      ]
+    }
+  ],
+  "isolation": "bubblewrap unshare-all; minimal dev; no /sys; no device nodes; no network",
+  "scope": "Offline ZIP metadata/extraction only. No firmware transfer or Bluetooth API called.",
+  "source_library_unchanged": true,
+  "unverified": "Actual firmware updater caller, scan teardown and flashing are not exercised."
+}

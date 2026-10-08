@@ -1,0 +1,54 @@
+{
+  "observed_at": "2026-10-09T01:04:14.083940+02:00",
+  "trial_date": "2026-10-09",
+  "timezone": "Europe/Berlin (CEST, UTC+02:00)",
+  "scope": "Read-only independent comparison of every logged successful DFU CRC response with bytes from the untouched installed Valve firmware archive. No radio operations performed.",
+  "archive_filename": "lighthouse_tx_vader_radio_full_dfu.v2_9_2004771.zip",
+  "archive_sha256": "1e0885a02844a36f38ec356915d48345c17d68c7f686dfcf86d71350155a80d0",
+  "crc_response_count": 75,
+  "all_crc_responses_match_archive": true,
+  "crc_mismatches": [],
+  "init": {
+    "bytes": 144,
+    "crc_response_count": 1,
+    "final": {
+      "object": "init",
+      "offset": 144,
+      "reported_crc32": "088e2011",
+      "expected_crc32": "088e2011",
+      "matches": true
+    }
+  },
+  "firmware": {
+    "bytes": 297956,
+    "crc_response_count": 74,
+    "final": {
+      "object": "firmware",
+      "offset": 297956,
+      "reported_crc32": "8d750ec4",
+      "expected_crc32": "8d750ec4",
+      "matches": true
+    }
+  },
+  "handoff": {
+    "successful_buttonless_response": "01:01:27.525675: 20 01 01",
+    "hvc_request": "01:01:27.533285",
+    "shim_confirmation": "Startup log confirms one matching disconnect delayed by 500 ms after successful HVC for attribute 28.",
+    "disconnect_event": "01:01:31.837443: BLE_HCI_CONNECTION_TIMEOUT",
+    "bootloader_connection_established": "01:01:31.889201 at expected incremented address; hardware address omitted.",
+    "interpretation": "The grace interval allowed the bootloader connection. SteamVR logged its disconnect intention before the hook delayed the call. The observed disconnect event was a connection timeout, not a clean remote-initiated disconnect."
+  },
+  "error_preservation": {
+    "observed_errors": [
+      "Error. Write operation failed. (gatt_status: BLE_GATT_STATUS_ATTERR_INSUF_AUTHENTICATION)"
+    ],
+    "assessment": "Only the initial insufficient-authentication write response was observed, followed by the normal successful authentication flow. The reviewed shim forwards original API return codes and arguments unchanged; it delays one matching disconnect."
+  },
+  "completion": {
+    "firmware_progress_100_percent": "01:03:31.198568",
+    "firmware_transfer_complete": "01:03:31.218638 (118.57 seconds)",
+    "wireless_api_success": "01:03:48.105993: BaseStationWireless_Success",
+    "wizard_success": true,
+    "conclusion": "All 297956 firmware bytes and all 144 init bytes reached their final offsets with matching CRCs; SteamVR reported wireless update success. Persistent firmware-version readback and normal two-station operation remain separate verification steps."
+  }
+}

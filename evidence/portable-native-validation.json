@@ -1,0 +1,67 @@
+{
+  "scope": "Hardware-free isolated tests; SteamVR was not started",
+  "timing": [
+    {
+      "mode": "global",
+      "status": "PASS"
+    },
+    {
+      "mode": "local",
+      "status": "PASS"
+    },
+    {
+      "mode": "expiry",
+      "status": "PASS"
+    }
+  ],
+  "archive_reader": [
+    {
+      "mode": "original",
+      "expected_memory_fault_reproduced": true,
+      "signal": "SIGABRT",
+      "bad_alloc_reported": true
+    },
+    {
+      "mode": "patched",
+      "status": "PASS",
+      "byte_identical_payloads": [
+        {
+          "round": 0,
+          "entry": "lighthouse_tx_vader_radio_full.bin",
+          "bytes": 297956,
+          "sha256": "b54a8a7e98cf31337ab0bccc5df2566338048caa82acf8675625efc0b2c94f5d"
+        },
+        {
+          "round": 0,
+          "entry": "lighthouse_tx_vader_radio_full.dat",
+          "bytes": 144,
+          "sha256": "e902f709a73631bcaf030e28cddabe1229c33ddd4d6625dbb444f2d736f98640"
+        },
+        {
+          "round": 0,
+          "entry": "manifest.json",
+          "bytes": 192,
+          "sha256": "9a9b253cf6ee04958d4fd4773e7c8be8c06c4690e64250005a340c14c6b63d54"
+        },
+        {
+          "round": 1,
+          "entry": "lighthouse_tx_vader_radio_full.bin",
+          "bytes": 297956,
+          "sha256": "b54a8a7e98cf31337ab0bccc5df2566338048caa82acf8675625efc0b2c94f5d"
+        },
+        {
+          "round": 1,
+          "entry": "lighthouse_tx_vader_radio_full.dat",
+          "bytes": 144,
+          "sha256": "e902f709a73631bcaf030e28cddabe1229c33ddd4d6625dbb444f2d736f98640"
+        },
+        {
+          "round": 1,
+          "entry": "manifest.json",
+          "bytes": 192,
+          "sha256": "9a9b253cf6ee04958d4fd4773e7c8be8c06c4690e64250005a340c14c6b63d54"
+        }
+      ]
+    }
+  ]
+}

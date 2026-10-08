@@ -1,0 +1,24 @@
+{
+  "observed_at_utc": "2026-10-08T23:06:52.244308+00:00",
+  "method": "OpenVR IVRSystem property queries using VRApplication_Background against already-running stock SteamVR; no database file read, device write, BLE scan, firmware command or rendering call.",
+  "runtime_version": "2.18.2",
+  "tracking_references": [
+    {
+      "anonymous_label": "station_1",
+      "connected": true,
+      "FirmwareVersion_Uint64": 3008,
+      "Firmware_UpdateAvailable_Bool": false,
+      "property_errors": "TrackedProp_Success"
+    },
+    {
+      "anonymous_label": "station_2",
+      "connected": true,
+      "FirmwareVersion_Uint64": 3008,
+      "Firmware_UpdateAvailable_Bool": false,
+      "property_errors": "TrackedProp_Success"
+    }
+  ],
+  "privacy": "No serial number, MAC address or filesystem path appears in this record.",
+  "header_source": "https://github.com/ValveSoftware/openvr/blob/master/headers/openvr.h",
+  "header_sha256": "1e6ed57199896cc1f7c5484e50fa18955e97be15be690beb28d998c877ead7fd"
+}

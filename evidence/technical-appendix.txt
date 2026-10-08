@@ -1,0 +1,59 @@
+SteamVR 2.18.2 beta / build 25664061: offline crash findings
+Analysis date: 2026-10-09. All addresses below are module-relative virtual addresses unless an absolute core address is explicitly given. Analysis used unmodified installed beta binaries and saved cores, without attaching to or changing live SteamVR.
+
+Binary identity:
+  libnrfserlib.so SHA256 840fcca06c14ecdec68567ac41fc347f2dfa0ae26d425283f45006599ff7d49a
+  libnrfserlib.so ELF build ID 8fc10fb37c94794e8e7bccd9b66edd65c5abe3b9
+  vrmonitor SHA256 6aa3f55de3d80e5299ddbf26afce6dc48ca34edab6896969d70175a3a1144e3e
+
+1. Firmware archive metadata ABI mismatch (deterministic)
+
+In libnrfserlib.so, the firmware ZIP reader begins at +0x5ebc0. It passes a stack-local entry record at rbp-0x170 to the helper at +0x77990 (GetZipItem), at callsites +0x5ec7d (index -1, entry count) and +0x5ed18 (index 0 and later).
+The caller reads the uncompressed size at rbp-0x40, i.e. record +0x130, at +0x5ed44 and uses that value for operator new[] at +0x5ed4d. This matches a 312-byte record with a 260-byte filename field.
+The helper implementation at +0x76f40 instead uses a 4144-byte (0x1030) record with a 4096-byte filename field. For index -1 it writes attributes/metadata at record +0x1004..+0x102f. For a normal entry, +0x767a0 writes the true uncompressed size at record +0x1028 (instruction +0x76923). Its cache copies 0x1030 bytes at +0x769cf / +0x77024.
+Thus the metadata is written thousands of bytes beyond the caller's actual stack object, and the caller reads an unrelated value at its expected size offset. A PATH_MAX / MAX_PATH header mismatch is the likely source-level cause; exact source names are inferred from the binary layout.
+
+Direct confirmation in utilities.core (PID 186995, crashing LWP 187173):
+  frame #8 PC = libnrfserlib.so +0x5ed52
+  rbp = 0x7f11e8ffb200; record = 0x7f11e8ffb090
+  record +0x004 => "lighthouse_tx_vader_radio_full.bin"
+  record +0x130 => 139716371572944 (0x7f1240b268d0)
+  record +0x1028 => 297956 (0x48be4), the EXACT correct archive entry length
+The absurd allocation therefore is not caused by a corrupt archive or actual memory exhaustion. The logged size 1085434064 is just the lower 32 bits of the invalid pointer-like value, printed through %d.
+
+Suggested fix for Valve: compile caller and ZIP implementation against an identical ZIPENTRY definition; prevent platform-varying filename constants from changing cross-unit ABI; validate sizes before allocation. Do not fix only the allocation: the oversized helper writes have already corrupted the caller's stack.
+
+Read-only reproduction using the saved core:
+  gdb -q -nx -batch \
+    -ex 'set solib-search-path /usr/lib:/home/USER/.local/share/Steam/steamapps/common/SteamVR/bin/linux64:/home/USER/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/qt/lib' \
+    /home/USER/.local/share/Steam/steamapps/common/SteamVR/bin/linux64/vrmonitor \
+    /home/USER/.local/state/gaming-audit/bluetooth-repair-20261009/utilities.core \
+    -ex 'frame 8' -ex 'x/s $rbp-0x16c' \
+    -ex 'p/d *(unsigned long*)($rbp-0x170+0x130)' \
+    -ex 'p/d *(unsigned long*)($rbp-0x170+0x1028)'
+
+2. Scan-results destructor frees another module's static empty string
+
+Separately, beta.core (PID185231, LWP185400) aborts at vrmonitor +0x17f5b8, returning from a COW std::string destruction call. The scan result vector consists of two 48-byte records, beginning at core address 0x7f8d18102630. The first record's string field at +0x20 points to 0x7f8d9866ec58 = libnrfserlib.so +0xebc58, its static empty-string character storage. Its 24-byte preceding header at libnrfserlib+0xebc40 has length0, capacity0, and refcount-1 after the decrement.
+vrmonitor +0x17f0f8 loads the string, subtracts24 to get its header, and +0x17f101 compares the header against vrmonitor's own empty-string singleton (+0x39f5c0). These differ, so +0x17f590 decrements the foreign empty string's refcount and +0x17f5b3 calls destruction/free through +0x336330. The attempted free of static module storage aborts.
+Both vrmonitor and libnrfserlib carry private statically linked C++ runtime code. This is consistent with a cross-module COW empty-string ownership defect, independently of the ZIP struct layout defect. Rebuilding with consistent shared C++ runtime/ABI or avoiding C++ owned objects across this boundary is the source-level fix to investigate.
+
+3. Archive integrity / offline hardware-isolated test
+
+firmware-copy.zip SHA256:
+1e0885a02844a36f38ec356915d48345c17d68c7f686dfcf86d71350155a80d0
+Python zipfile.testzip() reports no errors.
+A minimal C harness in sibling directory offline-zip/ calls only OpenZip, GetZipItem, UnzipItem, CloseZip from the installed library. It obtains the library base via dlsym+dladdr, never calls NRFSerLib_GetBaseStationWirelessInterface, and invokes no BLE/firmware methods.
+It ran inside bubblewrap with isolated network/PID namespaces, a fresh minimal /dev containing no physical devices, no sysfs, read-only /usr and library files, and write access only to its diagnostic working directory. Correctly sized ZIP records and extraction buffers end against PROT_NONE guard pages. An explicit field-by-field 4144->312-byte record conversion was checked.
+All three files extract successfully (native code returns0x600 for a full exact-length output buffer, accepted by the original caller). Each output is byte-for-byte identical to Python's standard ZIP decoder:
+  lighthouse_tx_vader_radio_full.bin: 297956 bytes, SHA256 b54a8a7e98cf31337ab0bccc5df2566338048caa82acf8675625efc0b2c94f5d
+  lighthouse_tx_vader_radio_full.dat: 144 bytes, SHA256 e902f709a73631bcaf030e28cddabe1229c33ddd4d6625dbb444f2d736f98640
+  manifest.json: 192 bytes, SHA256 9a9b253cf6ee04958d4fd4773e7c8be8c06c4690e64250005a340c14c6b63d54
+
+This proves the native archive decoder and firmware archive are functional with the correct record size. It does not prove that a patched full updater or the firmware transfer is safe/successful. No installed binary, process memory, firmware contents, or hardware was changed by this analysis.
+
+4. Exact private firmware ZIP reader: isolated before/after verification
+
+A subsequent hardware-isolated test (offline-repair/test_full_reader.c, full-reader-results.json) invoked libnrfserlib.so+0x5ebc0 directly, passing a zeroed 192-byte object with its output vector at offsets0xa8/0xb0/0xb8 and a path string wrapper. No interface initialization or BLE API was called. The original installed library reliably aborted with std::bad_alloc (exit134) on the copied official firmware archive. A separately patched COPY, redirecting only the two GetZipItem callsites through a 4144->312-byte metadata adapter, returned success.
+Its full original reader produced all three exact expected payloads; a second read reused the output vector successfully; the missing-archive error path returned false and cleared the vector. A protected object allocation, front canary, and unchanged prefix check passed. All six payload outputs (two rounds) matched Python byte-for-byte and the SHA256 hashes above. The installed library remained unchanged.
+The adapter assembly and ELF rewrite were independently reviewed for stack alignment, struct offsets, name bounds, error propagation, and nonoverlap of the appended executable segment. This is a direct offline reproduction and correction of the ZIP parsing defect, not verification of actual Bluetooth firmware transfer or the separate scan-results destructor defect.

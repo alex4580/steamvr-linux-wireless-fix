@@ -1,0 +1,98 @@
+Title: [Linux] Base Station 2.0 wireless update crashes in 2.17.10 / 2.18.2: ZIP entry layout mismatch and invalid free of cross-module empty string
+
+Current outcome: a controlled local test completed the replacement station update successfully on 2026-10-09 at 01:03:48 CEST. It used an isolated SteamVR copy with the ZIP layout repair and one 500 ms Bluetooth handoff delay, with only the replacement station powered. Installed SteamVR binaries remained unchanged. These experimental changes are not an upstream fix; the stock crash findings below remain actionable.
+
+Summary
+Valve Index with two Base Station 2.0 units on CachyOS. Updating the replacement station from MCU firmware 3002 to required 3008 repeatedly aborts vrmonitor (SIGABRT, BaseStationWork thread). Recovery also fails. Native Bluetooth power management works: both stations were verified to sleep on normal SteamVR exit and wake/be detected on restart.
+
+Steps to reproduce
+1. Connect an Index normally by DisplayPort, USB and power; power on both stations on distinct channels.
+2. Start native Linux SteamVR with Bluetooth enabled. The replacement station is detected and reports a firmware update required.
+3. Open that station's firmware update and continue through wireless scanning. Controllers-off attempts were also tested.
+4. SteamVR exits with free(): invalid size / invalid pointer, or std::bad_alloc. Restarting still reports the update required or offers failed-update recovery.
+
+Expected: Complete the wireless update, or report a recoverable error without crashing.
+Actual: vrmonitor aborts; the required update remains outstanding. Repeatedly reproducible in both tested versions.
+
+System
+- CachyOS (Arch-derived), x86_64, Linux 7.2.9-1-cachyos
+- Ryzen 9 9900X3D; Radeon RX 6900 XT, Mesa/RADV 26.2.4
+- KDE Plasma Wayland 6.7.5
+- glibc 2.44+r50+g1848099f063e-1; gcc-libs 16.2.1+r23+gd564253eb6c8-1
+- Native Steam package 1.0.0.87-3 (not Flatpak); Steam client build 1788652215 per startup log
+- SteamVR stable 2.17.10, app build 25330290, runtime version 1789498647
+- SteamVR beta 2.18.2, app build 25664061, runtime version 1790893534
+- Steam Linux Runtime 3.0: sniper_platform_3.0.20260805.254768; SteamVR is not running through Proton
+- Valve Index HMD and two Base Station 2.0 units; replacement status light solid green, tracking and native sleep/wake work
+
+Reproduction evidence (local time CEST, UTC+02:00)
+- 2026-10-08 23:54:45: stable wireless update aborts with std::bad_alloc; basestation_wireless.txt reports BIN size -1072535344.
+- 2026-10-09 00:19:36: stable, after generating System Report first, aborts with free(): invalid size.
+- 2026-10-09 00:25:52: stock beta aborts with free(): invalid size; PID 185231 / BaseStationWork TID 185400.
+  Steam crash ID: bp-0109cdd6-57c5-4dbb-96b7-a8d442261008
+- 2026-10-09 00:29:36: beta in a temporary diagnostic copy of sniper with missing pkill/lsusb utilities supplied aborts with std::bad_alloc; PID 186995 / BaseStationWork TID 187173.
+  Steam crash ID: bp-c2ec57f2-fcf9-44fc-bdaf-1b4c72261008
+  This altered-runtime test is identified separately; the stock runtime also reproduces the crash.
+
+Offline crash analysis: two concrete findings
+1. ZIP entry layout mismatch in libnrfserlib.so:
+   Caller supplies an output structure at rbp-0x170 and reads the uncompressed size at output+0x130 (layout with a 260-byte filename).
+   GetZipItem uses a layout with a 4096-byte filename and a total size of 0x1030, writing the uncompressed size at output+0x1028.
+   In utilities.core, output+0x1028 contains the correct 297956-byte BIN size; output+0x130 contains 0x7f1240b268d0 (139716371572944 bytes), passed to allocation.
+   This indicates out-of-bounds writes as well as the wrong size read. Merely capping the allocation would not repair the structure mismatch.
+2. Cross-module empty std::string representation in the separate scan-result crash:
+   A scan record's field at +0x20 points to libnrfserlib.so's empty COW-string storage (data: module + 0xebc58; header: module + 0xebc40).
+   vrmonitor compares it against its own empty-string singleton (module+0x39f5c0), then attempts to destroy/free the foreign library's static storage.
+   The invalid-free path is in vrmonitor around module+0x17f0f8 through +0x17f5b3.
+These findings come from disassembly and core memory, not Valve source/debug symbols. Please confirm against the matching source builds.
+
+Firmware archive
+SteamVR/tools/lighthouse/firmware/lighthouse_tx_vader/archive/428/lighthouse_tx_vader_radio_full_dfu.v2_9_2004771.zip
+Python ZIP CRC/integrity test passes. Entries:
+- lighthouse_tx_vader_radio_full.bin: 297956 bytes
+- lighthouse_tx_vader_radio_full.dat: 144 bytes
+- manifest.json: 192 bytes
+ZIP SHA256: 1e0885a02844a36f38ec356915d48345c17d68c7f686dfcf86d71350155a80d0
+Beta vrmonitor SHA256: 6aa3f55de3d80e5299ddbf26afce6dc48ca34edab6896969d70175a3a1144e3e
+Beta libnrfserlib.so SHA256: 840fcca06c14ecdec68567ac41fc347f2dfa0ae26d425283f45006599ff7d49a
+
+Checks and attempted remedies
+- Stable and beta tested; creating System Report first and turning controllers off did not resolve it.
+- Index serial-radio /dev/ttyACM1 has user read/write access via udev; ModemManager inactive; no diagnostic process was holding the device.
+- HMD/radio USB power control is on, runtime status active and suspended time zero.
+- Stock sniper lacks /usr/bin/pkill and lsusb. In the temporary runtime test, all four requested pkill cleanup calls ran, and the updater still failed. Temporary runtime copies were subsequently removed.
+- No firmware bytes or installed SteamVR binaries were modified during the above tests.
+- Native Bluetooth/base-station power management remains enabled and passed a full sleep/wake test.
+- The Developer Settings "Disable Power Management" button reports an admin/helper error; the log says "RemoveAllRelevantUSBDevices is not implemented on this platform." This appears to be a separate unsupported Linux helper path.
+
+Request
+Please investigate the inconsistent ZIPENTRY layout and ownership of empty std::string values across the statically linked modules, and provide a supported Linux wireless update/recovery fix. The station can track and sleep/wake, so permanently disabling Bluetooth is not a solution.
+
+Related existing reports
+https://github.com/ValveSoftware/SteamVR-for-Linux/issues/653
+https://github.com/ValveSoftware/SteamVR-for-Linux/issues/709
+https://github.com/ValveSoftware/SteamVR-for-Linux/issues/589
+
+Attachments
+The companion ZIP contains this report, relevant filtered logs, and offline backtraces. User paths and hardware identifiers are anonymized consistently. Full core dumps are retained locally and are not included in the public attachment.
+
+Additional offline validation (after the stock crash reproductions above)
+An isolated harness with no USB, sysfs or network access invoked the actual firmware ZIP reader at libnrfserlib.so+0x5ebc0. The original library reproduces std::bad_alloc (exit status 134) without any headset present. A separate experimental copy with only the two GetZipItem call sites redirected through a layout-conversion adapter reads all three files correctly, twice, handles a missing archive, and produces bytes identical to Python zipfile. See offline-full-reader-results.json and technical-appendix.txt. This is an offline proof of the ZIP defect and a candidate repair, not evidence that firmware transfer or the separate empty-string defect is fixed.
+
+Controlled live candidate-repair test (2026-10-09 00:49 CEST)
+Using a separate SteamVR tree with the ZIP adapter and only the replacement station powered, the running process was verified to load the modified copy. Installed SteamVR binaries and firmware archive bytes remained unchanged. Firmware entries were read as the correct 297956/144/192 bytes. The updater no longer aborted: it connected to the station, completed authentication, received buttonless-DFU response 20 01 01, then reported a normal update failure after timing out connecting to the expected incremented bootloader address. No firmware upload is logged for this attempt.
+
+Possible additional timing issue (hypothesis, not confirmed): HVC was requested at 00:49:10.175811 and local disconnect at 00:49:10.176429, less than 1 ms later. Nordic documents that sd_ble_gattc_hv_confirm queues the confirmation; its reference updater waits for the peer to disconnect. API reference: https://github.com/NordicSemiconductor/pc-ble-driver/blob/master/include/sd_api_v6/ble_gattc.h A subsequent passive scan still found the normal application address. The discovered DFU characteristic is 0x0003, so incrementing the address is consistent with Nordic's unbonded buttonless-DFU protocol.
+https://github.com/NordicSemiconductor/pc-nrfutil/blob/master/nordicsemi/dfu/dfu_transport_ble.py
+
+Successful controlled timing experiment (2026-10-09 01:01–01:04 CEST)
+With the same ZIP adapter and station isolation, a process-scoped shim forwarded sd_ble_gattc_hv_confirm unchanged and, after its successful confirmation on handle 28, delayed the matching sd_ble_gap_disconnect by 500 ms once. Backend arguments, return codes and errors were preserved. No authentication or firmware payload was changed. Hardware-free tests cover global/local symbol lookup, matching conditions, one-shot behavior and expiry.
+
+The station became reachable at the expected incremented bootloader address. The 144-byte init packet and 297956-byte firmware image transferred successfully; all 75 logged CRC responses match the unchanged Valve archive. Full firmware transfer completed at 01:03:31.218638 in 118.57 seconds. SteamVR entered FirmwareWizard_State_BaseStation_WirelessSuccess at 01:03:48.106068; the user independently confirmed success. See live-crc-validation.json and successful-*.txt.
+
+This strongly supports a handoff timing defect, but does not establish the exact over-air packet sequence. SteamVR's "Disconnecting" log is emitted before the intercepted call, and the eventual event was BLE_HCI_CONNECTION_TIMEOUT, not a clean peer-initiated disconnect. An upstream implementation should handle the confirmation/disconnection lifecycle explicitly rather than rely on an arbitrary sleep. The separate two-station empty-string ownership crash was avoided by station isolation, not repaired.
+
+After completion, the temporary launch wrapper was removed and normal installed SteamVR restarted with no experimental libraries mapped. OpenVR runtime and URI handlers point to the installed runtime. Native Bluetooth and both stations' power-management entries remain enabled.
+
+Post-update validation using unmodified installed SteamVR
+A read-only OpenVR background application queried both connected tracking-reference devices. Each reported Prop_FirmwareVersion_Uint64 = 3008 and Prop_Firmware_UpdateAvailable_Bool = false, both with TrackedProp_Success. The user confirmed both stations were green/detected and the replacement update warning was gone. On normal SteamVR exit, both stations again turned blue and stopped their motors. Native Bluetooth sleep therefore still works after the update. Experimental libraries were not loaded in this verification session; installed vrmonitor and libnrfserlib.so hashes still match the originals listed above.

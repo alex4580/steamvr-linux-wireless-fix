@@ -1,0 +1,60 @@
+{
+  "status": "PASS",
+  "tests": [
+    {
+      "mode": "original",
+      "return_code": 134,
+      "stdout": "MODE\toriginal\n",
+      "stderr": "terminate called after throwing an instance of 'std::bad_alloc'\n  what():  std::bad_alloc\n",
+      "reproduced_failure": true
+    },
+    {
+      "mode": "patched",
+      "return_code": 0,
+      "stdout": "MODE\tpatched\nRESULT\t0\t1\nENTRY\t0\t0\tlighthouse_tx_vader_radio_full.bin\t297956\nENTRY\t0\t1\tlighthouse_tx_vader_radio_full.dat\t144\nENTRY\t0\t2\tmanifest.json\t192\nRESULT\t1\t1\nENTRY\t1\t0\tlighthouse_tx_vader_radio_full.bin\t297956\nENTRY\t1\t1\tlighthouse_tx_vader_radio_full.dat\t144\nENTRY\t1\t2\tmanifest.json\t192\nPASS: actual firmware ZIP reader, repeated vector reuse, and missing archive error.\n",
+      "stderr": "",
+      "verified_payloads": [
+        {
+          "round": 0,
+          "index": 0,
+          "bytes": 297956,
+          "sha256": "b54a8a7e98cf31337ab0bccc5df2566338048caa82acf8675625efc0b2c94f5d"
+        },
+        {
+          "round": 0,
+          "index": 1,
+          "bytes": 144,
+          "sha256": "e902f709a73631bcaf030e28cddabe1229c33ddd4d6625dbb444f2d736f98640"
+        },
+        {
+          "round": 0,
+          "index": 2,
+          "bytes": 192,
+          "sha256": "9a9b253cf6ee04958d4fd4773e7c8be8c06c4690e64250005a340c14c6b63d54"
+        },
+        {
+          "round": 1,
+          "index": 0,
+          "bytes": 297956,
+          "sha256": "b54a8a7e98cf31337ab0bccc5df2566338048caa82acf8675625efc0b2c94f5d"
+        },
+        {
+          "round": 1,
+          "index": 1,
+          "bytes": 144,
+          "sha256": "e902f709a73631bcaf030e28cddabe1229c33ddd4d6625dbb444f2d736f98640"
+        },
+        {
+          "round": 1,
+          "index": 2,
+          "bytes": 192,
+          "sha256": "9a9b253cf6ee04958d4fd4773e7c8be8c06c4690e64250005a340c14c6b63d54"
+        }
+      ]
+    }
+  ],
+  "installed_library_unchanged": true,
+  "scope": "Exact private firmware ZIP reader only; no Bluetooth API or hardware access. Copy alone is modified.",
+  "isolation": "bubblewrap unshare-all, no device nodes or /sys, no network, RLIMIT_CORE=0, RLIMIT_AS=512MiB",
+  "remaining_unverified": "Firmware transfer, BLE scan teardown, and interaction with vrmonitor are not exercised."
+}

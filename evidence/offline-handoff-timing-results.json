@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "shim": "/home/USER/.local/state/gaming-audit/bluetooth-repair-20261009/handoff-timing/libnrf_handoff_timing.so",
+  "sha256": "7e082c493cca4817972fdf0a814d4d4daf82ee119e4a0ed9b4a25b3fd3cf82e2",
+  "exports": [
+    "sd_ble_gap_disconnect",
+    "sd_ble_gattc_hv_confirm"
+  ],
+  "tests": [
+    {
+      "mode": "global",
+      "returncode": 0,
+      "stdout": "PASS no confirmation delay=0.000003 code=0xabcdef01\nPASS wrong attribute delay=0.000000 code=0x00000091\nPASS failed confirmation delay=0.000000 code=0x00000092\nPASS other adapter delay=0.000000 code=0x00000093\nPASS other connection delay=0.000000 code=0x00000094\nPASS matching confirmation delay=0.500055 code=0xfeedbeef\nPASS consumed once delay=0.000001 code=0x00000096\nPASS cannot rearm delay=0.000000 code=0x00000097\nPASS null pointer forwarding delay=0.000000 code=0x00000098\nPASS: every backend called exactly once with original arguments, return code and errno; only one matching disconnect delayed.\n",
+      "stderr": "[nrf-handoff-timing] armed after successful HVC attribute=28 connection=4660\n[nrf-handoff-timing] delaying matching disconnect 500ms once; connection=4660 reason=19\n"
+    },
+    {
+      "mode": "local",
+      "returncode": 0,
+      "stdout": "PASS no confirmation delay=0.000004 code=0xabcdef01\nPASS wrong attribute delay=0.000000 code=0x00000091\nPASS failed confirmation delay=0.000000 code=0x00000092\nPASS other adapter delay=0.000000 code=0x00000093\nPASS other connection delay=0.000000 code=0x00000094\nPASS matching confirmation delay=0.500054 code=0xfeedbeef\nPASS consumed once delay=0.000001 code=0x00000096\nPASS cannot rearm delay=0.000000 code=0x00000097\nPASS null pointer forwarding delay=0.000000 code=0x00000098\nPASS: every backend called exactly once with original arguments, return code and errno; only one matching disconnect delayed.\n",
+      "stderr": "[nrf-handoff-timing] armed after successful HVC attribute=28 connection=4660\n[nrf-handoff-timing] delaying matching disconnect 500ms once; connection=4660 reason=19\n"
+    },
+    {
+      "mode": "expiry",
+      "returncode": 0,
+      "stdout": "PASS expired confirmation delay=0.000002 code=0x00000081\nPASS new confirmation after expiry delay=0.500066 code=0x00000082\nPASS: every backend called exactly once; expired marks do not affect later reused connections.\n",
+      "stderr": "[nrf-handoff-timing] armed after successful HVC attribute=28 connection=4660\n[nrf-handoff-timing] armed after successful HVC attribute=28 connection=4660\n[nrf-handoff-timing] delaying matching disconnect 500ms once; connection=4660 reason=19\n"
+    }
+  ],
+  "scope": "Fake backend only; hardware/network isolated; never loaded into SteamVR.",
+  "warning": "Never add fake-tests-only to a real SteamVR library path."
+}
